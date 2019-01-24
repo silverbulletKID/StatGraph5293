@@ -3,6 +3,8 @@ Problem Set 1
 
 ## Instructions
 
+Read Unwin, GDAwR, Chapter 3
+
 Complete the exercises below and then render (knit) the document to html
 (not nb.html). Submit both the .Rmd and .html files to CourseWorks by
 1/31/19 11:59pm (or as soon as you gain access to CourseWorks if you’re
