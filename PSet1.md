@@ -8,6 +8,8 @@ Complete the exercises below and then render (knit) the document to html
 1/31/19 11:59pm (or as soon as you gain access to CourseWorks if you’re
 on the waitlist.)
 
+Note that your assignment should include code, graphs, and textual explanation answering any questions in the exercises.
+
 ## Galaxies
 
 Unwin, Ch. 3, \#1
