@@ -1,6 +1,6 @@
 ---
 title: "Problem Set 1"
-author: "<add your name here>"
+author: "<Ming Zhong>"
 date: "1/31/2019"
 output: html_document
 ---
@@ -19,12 +19,81 @@ Unwin, Ch. 3, #1
 
 (10 points)
 
+(a)
+```{r}
+library(MASS)
+library(ggplot2)
+data=data.frame(galaxies)
+#histogram
+ggplot(data=data, aes(galaxies)) + geom_histogram(bins=82) + ylab ("") + xlab (" velocities of 82 planets")
+```
+
+Most of the velocities concentract aropund 20000. But there are also planets with small velocities (around 10000) and planets with larger velocities(between 30000-35000)
+
+```{r}
+#boxplot
+ggplot (data=data, aes (y=galaxies)) + geom_boxplot () +  ylab (" velocities of 82 planets") + scale_x_discrete (breaks= NULL )+ coord_flip ()
+```
+
+There are several extreme values in tails. Some are small than 15000, others are larger than 30000.
+
+```{r}
+ggplot (data=data, aes (x=galaxies)) + geom_density (kernel="gaussian") +  xlab ("velocities of 82 planets") 
+```
+
+The distribution of velocities of planets are not normal distribution. And it has fat fail in both sides.
+
+(2)
+```{r}
+#histogram
+ggplot(data=data, aes(galaxies)) + geom_histogram(binwidth =1000) + ylab ("") + xlab ("velocities of 82 planets")
+library(KernSmooth)
+ks1 <- bkde (galaxies, bandwidth= dpik (galaxies)) 
+plot (ks1, col="red", lty=5, lwd=2)
+dpik(galaxies)
+```
+So, the best binwidth should be 1000 and the best bandwidth is 809.252.
+
+(3)
+```{r}
+library (KernSmooth) 
+with (data=data, { 
+  hist (galaxies,breaks= 82, freq=FALSE, col="bisque2",xlab="velocities", main="velocities of 82 planets") 
+  ks1 <- bkde (galaxies, bandwidth= dpik (galaxies)) 
+  lines (ks1, col="red", lty=5, lwd=2)})
+```
+
+Two graphs should be enough. Combine both the histogram and density. And we also use boxplot to show the extreme values.
 
 ## Zuni educational funding
 
 Unwin, Ch. 3, #5
 
 (10 points)
+
+```{r}
+library(lawstat)
+data(zuni)
+ggplot (data=zuni, aes (y=Revenue)) + geom_boxplot () +  ylab ("Revenue") +  coord_flip ()
+ggplot (data=zuni, aes (Revenue)) + geom_histogram () +  ylab ("Revenue")
+```
+The lowest 5% is not extreme. But the higest 5% is extreme. I prefer to use boxplot to show it.
+
+```{r}
+library(dplyr)
+p95 <- quantile(zuni$Revenue, 0.95)
+p05 <- quantile(zuni$Revenue, 0.05)
+Trunc <- filter(zuni,Revenue<p95 & Revenue>p05)
+ggplot (data=Trunc, aes (x=Revenue)) + geom_density (kernel="gaussian") +  xlab ("Revenue") 
+```
+It is not symmetric.
+
+```{r}
+qqnorm (Trunc$Revenue,xlab="", ylab="", pch=16) 
+qqline (Trunc$Revenue)
+```
+
+No.
 
 ## Non-detectable
 
@@ -33,6 +102,16 @@ Unwin, Ch. 3, #6
 (10 points)
 
 Note: the question reads: "What plots would you draw..." however you should actually draw the plots, not just name the type you would use.
+```{r}
+library(mi)
+data(CHAIN)
+ggplot (CHAIN, aes (log_virus)) + geom_density () +  ylab ("log_virus")
+df=filter(data.frame(CHAIN),log_virus>0)
+ggplot (df, aes (log_virus)) + geom_histogram () +  ylab ("log_virus")
+```
+I would like to use density curve when there is zero.
+
+I should use histogram when there is no zero.
 
 ## Base Salary
 
@@ -43,9 +122,53 @@ For this question, we will use NYC salary data found here: https://data.cityofne
 Click the Export tab then CSV.
 
 a. List the 10 agencies (`Agency Name`) with the highest median base salaries (`Base Salary`) in descending order by median base salary.
+```{r}
+library(dplyr)
+library(data.table)
+NYC<- fread("~/Downloads/Citywide_Payroll_Data__Fiscal_Year_.csv", header = T, sep = ',')
+NYC=data.frame(NYC)
+NYC$Agency.Name=trimws(NYC$Agency.Name, which = "right")
+df<-NYC %>%
+  group_by(Agency.Name) %>% 
+  summarise(median_base_salary=median(Base.Salary))
+head(df[order(df$median_base_salary,decreasing = T),],10)
+
+```
 
 b. Use ridgeline plots to compare the distributions of base salary among the top 10 agencies from part a). The agencies should be sorted from lowest median base salary on the bottom of the graph to highest median base salary on the top of the graph.
+```{r}
+library(viridis)
+library(ggridges)
+library(forcats)
+ddf=df[order(df$median_base_salary,decreasing = T),]
+ddf=ddf[1:10,]
+ndf<-NYC %>%
+  inner_join(ddf, by = "Agency.Name") %>%
+  select(Agency.Name,Base.Salary,median_base_salary)
+
+ndf %>% 
+  ggplot(aes(x = Base.Salary, y = fct_reorder(Agency.Name,Base.Salary, .fun = median,.desc = FALSE),fill = ..x..)) +
+    geom_density_ridges_gradient(scale = 5,rel_min_height = 0.01) +
+    scale_fill_viridis(name = "Base Salary", option = "C") +
+    labs(title = 'Base Salary of Top 10 Agency')+xlab("") +ylab("Agency Name")
+```
 
 c. Describe patterns that you observe.
 
+Most of the distributions of salary have two peaks, which measn there might be a significant salary gap insides these agencies.
+
 d. What information is missing or not clear from the ridgeline plots? Plot the data with another chart form that provides additional information not available in the ridgeline plots. What do you learn?
+
+```{r}
+ndf %>% 
+  group_by(Agency.Name) %>%
+  summarise(num=length(Base.Salary)) %>%
+  ggplot(aes(Agency.Name,num)) +
+    geom_bar(stat="identity") +
+    labs(title = 'Base Salary of Top 10 Agency')+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+The number of people working for the agancy is missing. 
+
+I learn that DEPT OF ED PEDAGOGICAL has the most workers.
